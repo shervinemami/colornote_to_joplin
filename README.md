@@ -1,7 +1,7 @@
 #### This is a script that will import notes from your Colornote "notes.csv" file to Joplin
 
 ColorNote used to allow exporting to a "coolornote.db" database, but this has possibly been removed. So this script supports the newer "notes.csv" file format.
-If instead of a "notes.csv" file you have a "colornote.db" file, then use Ratcheck's original import script at [https://github.com/ratchek/colornote_to_joplin] instead.
+If instead of a "notes.csv" file you have a "colornote.db" file, then use Ratchek's original import script at [https://github.com/ratchek/colornote_to_joplin] instead.
 
 ## The "Why?"
 Colornote unfortunately doesn't allow you to export your data in any way (aside from exporting each note one by one). So if you aren't using it, **don't start now**. If you were and want to switch to a different app, this tool might be for you.
