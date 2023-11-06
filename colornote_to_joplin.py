@@ -1,8 +1,17 @@
-import requests
-import sqlite3
-import json
+#!/usr/bin/env python3
 
-DATABASE_LOCATION = 'colornote.db'
+# Joplin importer of ColorNote CSV file (obtained by emailing "support@socialnmobile.com").
+# The ColorNote CSV file named "notes.csv" needs to already be saved in this folder, with 4 or 5 columns in it.
+# By Shervin Emami (http://shervinemami.com or shervin.emami@gmail.com), 2023
+# Based on Ratchek's Joplin importer of ColorNote SQL db ("https://github.com/ratchek/colornote_to_joplin").
+
+import requests
+import json
+import pandas as pd
+from datetime import datetime
+from calendar import timegm
+
+DATABASE_LOCATION = 'notes.csv'
 
 class JoplinConnectionError(Exception):
     def __init__(self, api_call, response_code, response_body):
@@ -15,13 +24,8 @@ class JoplinConnectionError(Exception):
 class Database:
     """Database connection manager"""
     def __init__(self, db_location):
-        self.conn = sqlite3.connect(db_location)
-        self.cur = self.conn.cursor()
-    def execute(self, query):
-        self.cur.execute(query)
-        return self.cur.fetchall()
-    def __del__(self):
-        self.conn.close()
+        df = pd.read_csv(DATABASE_LOCATION)  # Import CSV file
+        self.records = [tuple(x) for x in df.values]   # Convert to a list of 4 or 5 element tuples.
 
 class JoplinApi:
     """Rudementary and very limited Joplin API abstraction"""
@@ -36,7 +40,7 @@ class JoplinApi:
     def create_top_level_folder(self):
         """ Create a notebook in Joplin that will contain all the imported notes."""
         #TODO add try catch block to make sure you've created the folder and are returning the id
-        r = requests.post(self.url+ "folders" + self.token_string, json={'title':"Imported from colornote"})
+        r = requests.post(self.url+ "folders" + self.token_string, json={'title':"Imported from ColorNote"})
         if r.status_code != 200:
             raise JoplinConnectionError("Create Folder", r.status_code, r.text)
         self.top_level_folder_id = r.json()["id"]
@@ -78,34 +82,52 @@ def setup():
 
     return (database, joplin)
 
-def get_categories(database):
-    """ Get the names of the colornote "categories"/colors and their corresponding id """
-    db_results = database.execute('SELECT note FROM notes WHERE title = "name_label_0";')
-    record = json.loads( db_results[0][0] )['D']
-    categories = { key[-1] : record[key]['V'] for key in record }
-    return categories
+
+# Convert the datetime string into the number of milliseconds since UNIX epoch start date
+def convertDateToMS(tm):
+    fmt = '%Y-%m-%d %H:%M:%S.%f'
+    seconds = timegm(datetime.strptime(tm, fmt).utctimetuple())
+    milliseconds = int(seconds * 1000)
+    return milliseconds
 
 
-
-def import_notes(database, joplin, label_id, label_name):
-    """ Move all the notes within a given category/color to a seperate folder in joplin """
-    # Create new folder and save id
-    folder_id = joplin.create_subcategory_folder(label_name)
-    print ("--- Creating notes in " + label_name + "---")
-    # Get all the notes corresponding to the label
-    records = database.execute('SELECT title, note, created_date, modified_date FROM notes WHERE color_index = "{}" AND NOT folder_id = "256";'.format(label_id))
+def import_notes(database, joplin):
+    """ Move all the notes to a seperate folder in joplin """
+    print ("--- Creating notes in Joplin parent folder ---")
     # For each of the notes, import it into the folder we just created
-    for record in records:
-        joplin.create_note(title=record[0], folder_id=folder_id, note_body=record[1], user_created_time=int(record[2]), user_updated_time=int(record[3]),)
+    counter = 0
+    for record in database.records:
+        created_ms = updated_ms = color_id = 0
+        title = note_body = ""
+        # By default, ColorNote CSV database only shows the note creation date, hence the CSV file has 4 columns and we can't know the last modified date of any notes.
+        # But if you ask them for it, they will include the note modification date too, hence the CSV file has 5 columns.
+        if len(record) == 4:
+            created_ms = convertDateToMS(record[0])
+            updated_ms = created_ms
+            color_id = record[1]
+            title = record[2]
+            note_body = record[3]
+        elif len(record) == 5:
+            created_ms = convertDateToMS(record[0])
+            updated_ms = convertDateToMS(record[1])
+            color_id = record[2]
+            title = record[3]
+            note_body = record[4]
+        else:
+            print("ERROR: Unknown number of columns in the ColorNote CSV file!")
+
+        # Create the note, using the webclipper interface
+        joplin.create_note(title=title, folder_id=joplin.top_level_folder_id, note_body=note_body, user_created_time=created_ms, user_updated_time=updated_ms)
+        counter = counter + 1
+        if counter > 10:
+            counter = 0
+            print(".", end="", flush=True)   # Print just a "." character without a newline.
     print("Done!")
 
 # Main function
 database, joplin = setup()
 
 joplin.create_top_level_folder()
-categories = get_categories(database)
-
-for key in categories:
-    import_notes(database, joplin, key, categories[key])
+import_notes(database, joplin)
 
 print ("Looks like we're all done! Thanks.")
