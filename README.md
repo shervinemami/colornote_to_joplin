@@ -1,4 +1,7 @@
-##### This is a script that will import notes from your Colornote database to Joplin
+#### This is a script that will import notes from your Colornote "notes.csv" file to Joplin
+
+ColorNote used to allow exporting to a "coolornote.db" database, but this has possibly been removed. So this script supports the newer "notes.csv" file format.
+If instead of a "notes.csv" file you have a "colornote.db" file, then use Ratcheck's original import script at [https://github.com/ratchek/colornote_to_joplin] instead.
 
 ## The "Why?"
 Colornote unfortunately doesn't allow you to export your data in any way (aside from exporting each note one by one). So if you aren't using it, **don't start now**. If you were and want to switch to a different app, this tool might be for you.
@@ -8,28 +11,20 @@ After you import this into Joplin, feel free to use its export options and get w
 So, what will this tool preserve?
  * Title
  * Body
- * Color category
  * Creation date
  * Modification date
 
-**Note**: this tool will *not* preserve the creation date for folders, any geolocation data, tags, or anything besides what's listed above. So MAKE SURE YOU HAVE A BACKUP OF YOUR DATABASE.
+**Note**: this tool will *not* preserve the color category, creation date for folders, any geolocation data, tags, or anything besides what's listed above. So MAKE SURE YOU HAVE A BACKUP OF YOUR DATABASE.
 ### **I AM NOT RESPONSIBLE FOR ANY LOST DATA**
-
 
 ## The "How?"
 ##### Prerequisites:
  * You need python or python3 installed on your system.
  * You need to have the  *requests*, *sqlite3*, and *json* modules installed (but they come pre-installed with python 3, so try not to worry about it)
 
-##### Prepping the database
- * First of all, you will need to *get* the database used by colornote. You will need a rooted android phone or emulator. Here's an excellent guide: (You will just need to do till step 7)
-
- 	https://android.stackexchange.com/questions/35207/import-data-from-colornote-app
-
-#### **  Warning. In order to make this work, you will need to delete geolocation data from your notes, so MAKE SURE YOU HAVE A BACKUP **
-* Once you've opened your database in the sqlite browser, in the "database structure" tab, click on the "notes" table to highlight it. Then click "Modify Table" at the top. You should get a popup window titled "edit table definition"
-* Scroll down to lattitude and longitude and delete both. Close the popup, save the changes by pressing the "Write changes" button at the top and then close the sqlite browser.
-* Copy the database into the folder containing *colornote_to_joplin.py* and make sure it's named "colornote.db"
+##### Prepping the CSV database
+ * First you need to *get* the CSV database used by ColorNote. If you enabled online backups in ColorNote, you can get the CSV database by emailing "support@socialnmobile.com" and asking for the database as a CSV file, INCLUDING the last modified date. (Note: If you don't specifically ask for the last modified date to be included, they're likely to only include the note creation date. This script will still import your CSV file, but it won't be as useful as if your CSV includes the last modified date).
+* Copy the CSV database file into the folder containing *colornote_to_joplin.py* and make sure it's named "notes.csv", which is typically the filename in the zip file from Social'N'Mobile.
 
 ##### Prepping Joplin
  * Open Joplin
@@ -39,10 +34,12 @@ So, what will this tool preserve?
 
 ## Zhu Li, Do The Thing!
  * Open a terminal and navigate to the folder where the program and database are stored.
- * Run the app by typing "python colornote_to_joplin.py" or "python3 colornote_to_joplin.py"
- * Input API key and port number when prompted.
- * This may take a bit, depending on the ammount of notes you have. Don't freak out.
+ * While Joplin is running on your PC, run this script by typing "./colornote_to_joplin.py" or "python3 colornote_to_joplin.py"
+ * Paste the API key and port number from Joplin when prompted.
+ * This may take a while, depending on the ammount of notes you have. Don't freak out.
  * You're done! Congrats.
 
 ## The Troubleshooting
- * If you've deleted both the lattitude and longitude and you're still getting a collation error from sqlite3, go to the "notes" table and set the collation to "none" on all the column variables.  
+ * .
+
+## Thanks for Ratchek for the original importer script!
